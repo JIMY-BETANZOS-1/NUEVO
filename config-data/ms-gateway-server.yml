@@ -1,0 +1,114 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: ms-gateway-server
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+
+      # CORS GLOBAL PARA ANGULAR
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+      routes:
+        # 1) AUTH
+        - id: ms-auth-public-auth
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/login, /auth/create
+          filters:
+            - StripPrefix=0
+
+        - id: ms-auth-public-registro
+          uri: lb://ms-auth
+          predicates:
+            - Path=/registro/**
+          filters:
+            - StripPrefix=0
+
+        - id: ms-auth-protected
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/validate, /alumnos/**, /apoderados/**
+          filters:
+            - StripPrefix=0
+
+        - id: ms-auth-docs
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/v3/api-docs, /auth/doc/**, /auth/h2-console/**
+          filters:
+            - StripPrefix=1
+
+        # 2) MATRICULAS
+        - id: ms-matriculas
+          uri: lb://ms-matriculas
+          predicates:
+            - Path=/matriculas/**
+          filters:
+            - StripPrefix=0
+            - AuthFilter
+
+        - id: ms-matriculas-docs
+          uri: lb://ms-matriculas
+          predicates:
+            - Path=/matriculas/v3/api-docs, /matriculas/doc/**, /matriculas/h2-console/**
+          filters:
+            - StripPrefix=1
+
+        # 3) PAGOS
+        - id: ms-pagos
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/pagos/**
+          filters:
+            - StripPrefix=0
+            - AuthFilter
+
+        - id: ms-pagos-docs
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/pagos/v3/api-docs, /pagos/doc/**, /pagos/h2-console/**
+          filters:
+            - StripPrefix=1
+
+        # 4) FINANZAS
+        - id: ms-finanzas
+          uri: lb://ms-finanzas
+          predicates:
+            - Path=/ingresos/**, /egresos/**, /finanzas/**
+          filters:
+            - StripPrefix=0
+            - AuthFilter
+
+        - id: ms-finanzas-docs
+          uri: lb://ms-finanzas
+          predicates:
+            - Path=/finanzas/v3/api-docs, /finanzas/doc/**, /finanzas/h2-console/**
+          filters:
+            - StripPrefix=1
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8090/eureka}
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
