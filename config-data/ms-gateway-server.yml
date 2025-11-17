@@ -1,0 +1,49 @@
+server:
+  port: 9090
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8090/eureka}
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+spring:
+  application:
+    name: ms-gateway-server
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      routes:
+        - id: ms-catalogo
+          uri: lb://ms-catalogo
+          predicates:
+            - Path=/categoria/**
+        - id: ms-producto
+          uri: lb://ms-producto
+          predicates:
+            - Path=/producto/**
+        - id: ms-auth
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/**
+
+      # 💡 ESTA es la forma correcta de definir CORS
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
